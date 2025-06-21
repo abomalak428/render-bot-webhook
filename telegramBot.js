@@ -1,9 +1,8 @@
 // Telegram Bot Access Control
-
 const allowedUsers = [
-  "Abumalak_bot",     // اسم البوت
-  "a_aseeri",          // مستخدم قديم
-  "Ibrahim_Asiri"      // المستخدم الجديد
+  "Abumalak_bot",    // أبو ملاك
+  "a_aseeri",         // أخو أبو ملاك
+  "Ibrahim_Asiri"     // حساب أبو ملاك الشخصي
 ];
 
 // Function to check if a user is authorized
@@ -16,13 +15,11 @@ function handleMessage(message) {
   const username = message.from.username;
 
   if (!isAuthorized(username)) {
-    return "🚫 غير مصرح لك باستخدام هذا البوت.";
+    return { text: `🚫 عذرًا ${username}، ليس لديك صلاحية استخدام هذا البوت.` };
   }
 
-  // تكتب هنا الرد المخصص حسب طلب المستخدم أو تنبيه
-  return `✅ تم قبول طلبك يا @${username}`;
+  // هنا نضع الرد الحقيقي من البوت
+  return { text: `مرحبًا ${username}! ✅ تم التحقق من صلاحيتك.` };
 }
 
-module.exports = {
-  handleMessage
-};
+module.exports = handleMessage;
