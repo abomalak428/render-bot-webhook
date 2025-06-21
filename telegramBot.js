@@ -1,29 +1,42 @@
+// Telegram Bot Access Control
 const allowedUsers = [
-  "Abumalak_bot", // أبو ملاك
-  "a_aseri",       // أخو أبو ملاك الشخصي
-  "Ibrahim_Asiri"  // حساب أبو ملاك الشخصي
+  "Abumalak_bot",   // بوت أبو ملاك
+  "a_aseri",         // أخو أبو ملاك
+  "Ibrahim_Asiri",   // حساب أبو ملاك الشخصي
 ];
 
+// Function to check if a user is authorized
 function isAuthorized(username) {
   return allowedUsers.includes(username);
 }
 
+// تحليل تلقائي حسب الرسالة
+function extractStockSymbol(text) {
+  const match = text.match(/(?:تحليل|حل)?\s*سهم\s*([A-Za-z0-9]+)/i) || text.match(/^([A-Za-z0-9]{3,5})$/);
+  return match ? match[1].toUpperCase() : null;
+}
+
+// Handle incoming message
 function handleMessage(message) {
   const username = message.from.username;
-  const text = message.text;
+  const text = message.text?.trim();
 
   if (!isAuthorized(username)) {
-    return { text: `🚫 عذرًا ${username}، ليس لديك صلاحية استخدام هذا البوت.` };
+    return {
+      text: `🚫 عذرًا ${username}، ليس لديك صلاحية استخدام هذا البوت.`,
+    };
   }
 
-  // استخراج اسم السهم من الرسالة إذا كانت "حل سهم ..."
-  if (text.toLowerCase().startsWith("حل سهم") || text.toLowerCase().startsWith("تحليل سهم")) {
-    const parts = text.split(" ");
-    const symbol = parts[2] || "غير معروف";
-    return { text: `📈 تحليل السهم ${symbol}: جاري تطوير التحليل الحقيقي...` };
+  const symbol = extractStockSymbol(text);
+  if (symbol) {
+    return {
+      text: `📊 تم استلام طلب تحليل السهم: ${symbol}.\nجاري جلب البيانات...`,
+    };
   }
 
-  return { text: `مرحبًا ${username} ✅! تم التحقق من صلاحيتك.` };
+  return {
+    text: `مرحبًا ${username}! ✅ تم التحقق من صلاحيتك.\nاكتب لي "تحليل سهم AAPL" أو رقم السهم مثل 2380.`,
+  };
 }
 
 module.exports = handleMessage;
