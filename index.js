@@ -1,14 +1,18 @@
-const express = require("express");
+const express = require('express');
+const bodyParser = require('body-parser');
+const { handleMessage } = require('./telegramBot');
+
 const app = express();
+app.use(bodyParser.json());
 
-app.use(express.json());
-
-app.post("/", (req, res) => {
-  console.log("🚀 Webhook received:", req.body);
-  res.status(200).send("✅ Webhook received");
+app.post('/', (req, res) => {
+  const message = req.body.message;
+  const response = handleMessage(message);
+  console.log("✅ رسالة جديدة:", response);
+  res.send({ reply: response });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🟢 Server is running on port ${PORT}`);
+  console.log(`🚀 البوت شغال على المنفذ ${PORT}`);
 });
