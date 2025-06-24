@@ -9,8 +9,8 @@ const port = process.env.PORT || 10000;
 app.use(bodyParser.json());
 
 const allowedUsers = [
-  "@Ibrahim_Asiri94BOT", // البوت الرسمي لأبو ملاك
-  "@a_aseeri"             // أخو أبو ملاك
+  "@Ibrahim_Asiri", // أبو ملاك
+  "@a_aseeri"        // أخو أبو ملاك
 ];
 
 // Function to check if a user is authorized
