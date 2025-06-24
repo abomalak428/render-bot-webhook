@@ -54,22 +54,33 @@ async function sendTelegramReply(chatId, text) {
   }
 }
 
-// ✅ النسخة الجديدة الذكية
 function extractSymbolFromText(text) {
-  const match = text.match(/(?:تحليل|حلل)\s+سهم\s+(.+)/i);
-  if (!match) return null;
+  const lowered = text.toLowerCase();
+  let symbolText = lowered
+    .replace('تحليل سهم', '')
+    .replace('حلل سهم', '')
+    .replace('سهم', '')
+    .replace('شركة', '')
+    .trim();
 
-  const raw = match[1].trim().replace(/سهم|شركة/g, "").trim();
-  const cleaned = raw.replace(/\s/g, '');
+  // التطابق الدقيق
+  if (arabicToEnglishSymbols[symbolText]) {
+    return arabicToEnglishSymbols[symbolText];
+  }
 
+  // التطابق الجزئي
   for (const [arabicName, symbol] of Object.entries(arabicToEnglishSymbols)) {
-    const arabicClean = arabicName.replace(/\s/g, '');
-    if (cleaned.includes(arabicClean) || arabicClean.includes(cleaned)) {
+    if (arabicName.includes(symbolText) || symbolText.includes(arabicName)) {
       return symbol;
     }
   }
 
-  return raw.toUpperCase();
+  // إذا فشل كل شيء، نحاول نستخدم الرمز كما هو
+  if (/^[a-z0-9.]{1,10}$/i.test(symbolText)) {
+    return symbolText.toUpperCase();
+  }
+
+  return null;
 }
 
 app.post('/', async (req, res) => {
