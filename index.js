@@ -1,25 +1,24 @@
+// Telegram Bot Access Control
+
+const axios = require('axios');
 const express = require('express');
 const bodyParser = require('body-parser');
-const axios = require('axios');
-
 const app = express();
+const port = process.env.PORT || 10000;
+
 app.use(bodyParser.json());
 
-// ✅ بيانات البوت
-const TELEGRAM_TOKEN = 'ضع التوكن الخاص بك هنا';
-
-// ✅ المستخدمين المسموح لهم
 const allowedUsers = [
-  "@Abumalak_bot",  // أبو ملاك
-  "@a_aseeri"       // أخو أبو ملاك
+  "@Ibrahim_Asiri94BOT", // البوت الرسمي لأبو ملاك
+  "@a_aseeri"             // أخو أبو ملاك
 ];
 
-// ✅ التحقق من المستخدم
+// Function to check if a user is authorized
 function isAuthorized(user) {
   return allowedUsers.includes(user);
 }
 
-// ✅ تنسيق رسالة التحليل
+// Function to generate detailed stock analysis message
 function generateStockAnalysis({ symbol, price, trend, entry, tradeType, targets, support, stop }) {
   return `📌 تحليل سهم: ${symbol}
 ▪️ السعر الحالي: ${price}
@@ -35,14 +34,35 @@ function generateStockAnalysis({ symbol, price, trend, entry, tradeType, targets
 🤖 بواسطة نظام أبو ملاك الذكي`;
 }
 
-// ✅ معالجة الرسائل
-function handleMessage(message) {
-  const username = message.from.username;
-  if (!isAuthorized("@" + username)) {
-    return "🚫 غير مصرح لك باستخدام هذا البوت.";
+// Function to send reply message via Telegram API
+async function sendTelegramReply(chatId, text) {
+  const token = process.env.TELEGRAM_TOKEN;
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
+  try {
+    await axios.post(url, {
+      chat_id: chatId,
+      text: text
+    });
+  } catch (error) {
+    console.error("فشل الإرسال لتليجرام:", error.response?.data || error.message);
+  }
+}
+
+// Handle incoming Telegram message and send reply
+app.post('/', async (req, res) => {
+  const message = req.body.message;
+  if (!message || !message.from || !message.text) return res.sendStatus(400);
+
+  const username = "@" + message.from.username;
+  const chatId = message.chat.id;
+
+  if (!isAuthorized(username)) {
+    await sendTelegramReply(chatId, `🚫 عذرًا ${username}، ليس لديك صلاحية لاستخدام هذا البوت.`);
+    return res.sendStatus(403);
   }
 
-  // مثال على بيانات تحليل وهمية
+  // تحليل وهمي بناءً على الكود
   const analysis = generateStockAnalysis({
     symbol: "2380",
     price: "38.50",
@@ -54,31 +74,10 @@ function handleMessage(message) {
     stop: "كسر 36.00 بإغلاق"
   });
 
-  return analysis;
-}
-
-// ✅ إرسال الرد لتليجرام
-function sendMessageToTelegram(chatId, text) {
-  return axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-    chat_id: chatId,
-    text: text
-  });
-}
-
-// ✅ نقطة استقبال الرسائل من تليجرام
-app.post('/webhook', async (req, res) => {
-  const message = req.body.message;
-  if (!message || !message.from || !message.chat) {
-    return res.sendStatus(400);
-  }
-
-  const reply = handleMessage(message);
-  await sendMessageToTelegram(message.chat.id, reply);
+  await sendTelegramReply(chatId, analysis);
   res.sendStatus(200);
 });
 
-// ✅ بدء التشغيل
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log(`🤖 Bot is running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Bot is running on port ${port}`);
 });
