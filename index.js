@@ -8,17 +8,18 @@ const port = process.env.PORT || 10000;
 
 app.use(bodyParser.json());
 
+// ✅ المصرح لهم باستخدام البوت
 const allowedUsers = [
-  "@Ibrahim_Asiri94BOT", // البوت الرسمي لأبو ملاك
-  "@a_aseeri"             // أخو أبو ملاك
+  "@Ibrahim_Asiri", // أبو ملاك
+  "@a_aseeri"        // أخو أبو ملاك
 ];
 
-// Function to check if a user is authorized
+// دالة التحقق من الصلاحيات
 function isAuthorized(user) {
   return allowedUsers.includes(user);
 }
 
-// Function to generate detailed stock analysis message
+// إنشاء رسالة تحليل فني مفصلة
 function generateStockAnalysis({ symbol, price, trend, entry, tradeType, targets, support, stop }) {
   return `📌 تحليل سهم: ${symbol}
 ▪️ السعر الحالي: ${price}
@@ -34,7 +35,7 @@ function generateStockAnalysis({ symbol, price, trend, entry, tradeType, targets
 🤖 بواسطة نظام أبو ملاك الذكي`;
 }
 
-// Function to send reply message via Telegram API
+// إرسال الرد عبر تليجرام
 async function sendTelegramReply(chatId, text) {
   const token = process.env.TELEGRAM_TOKEN;
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
@@ -49,7 +50,7 @@ async function sendTelegramReply(chatId, text) {
   }
 }
 
-// Handle incoming Telegram message and send reply
+// استقبال الرسائل من التليجرام
 app.post('/', async (req, res) => {
   const message = req.body.message;
   if (!message || !message.from || !message.text) return res.sendStatus(400);
@@ -62,7 +63,7 @@ app.post('/', async (req, res) => {
     return res.sendStatus(403);
   }
 
-  // تحليل وهمي بناءً على الكود
+  // تحليل وهمي لتجربة البوت
   const analysis = generateStockAnalysis({
     symbol: "2380",
     price: "38.50",
