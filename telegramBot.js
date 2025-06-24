@@ -18,6 +18,7 @@ function isAuthorized(user) {
   return allowedUsers.includes(user);
 }
 
+// أسماء عربية مع رموزها بالإنجليزية (قائمة جزئية كبداية)
 const arabicToEnglishSymbols = {
   "الراجحي": "1120.SR",
   "أرامكو": "2222.SR",
@@ -26,11 +27,9 @@ const arabicToEnglishSymbols = {
   "أكوا باور": "2082.SR",
   "المراعي": "2280.SR",
   "دار الأركان": "4300.SR",
-  "أهلي": "1180.SR",
   "الإنماء": "1150.SR",
   "جبل عمر": "4250.SR",
-  "سيرا": "1810.SR",
-  "بان": "9587.SR"
+  "مجموعة تداول": "1111.SR"
 };
 
 function generateStockAnalysis({ symbol, price, trend, entry, tradeType, targets, support, stop }) {
@@ -55,11 +54,21 @@ async function sendTelegramReply(chatId, text) {
   }
 }
 
+// تحسين التعرف على اسم السهم من النص (بإزالة كلمة سهم والمسافات)
 function extractSymbolFromText(text) {
   const match = text.match(/(?:تحليل|حلل)\s+سهم\s+(.+)/i);
   if (!match) return null;
   const raw = match[1].trim();
-  return arabicToEnglishSymbols[raw] || raw.toUpperCase();
+
+  const cleaned = raw.replace(/\s/g, '');
+
+  for (const [arabicName, symbol] of Object.entries(arabicToEnglishSymbols)) {
+    if (cleaned.includes(arabicName.replace(/\s/g, ''))) {
+      return symbol;
+    }
+  }
+
+  return raw.toUpperCase(); // محاولة تحويل لرمز مباشر مثل AAPL أو SPY
 }
 
 app.post('/', async (req, res) => {
