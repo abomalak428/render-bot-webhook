@@ -64,7 +64,7 @@ app.post('/', async (req, res) => {
 
   // تحليل وهمي بناءً على الكود
   const analysis = generateStockAnalysis({
-    symbol: "2380",
+    symbol: "1111",
     price: "38.50",
     trend: "صاعد",
     entry: "37.60",
