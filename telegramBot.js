@@ -1,6 +1,4 @@
-const axios = require('axios');
-const express = require('express');// Telegram Bot With Yahoo Finance Integration - أبو ملاك
-
+// Telegram Bot Access Control + Yahoo Finance Integration + Arabic Company Name Recognition
 const axios = require('axios');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -8,183 +6,112 @@ const yahooFinance = require('yahoo-finance2').default;
 
 const app = express();
 const port = process.env.PORT || 10000;
+
 app.use(bodyParser.json());
 
-// المستخدمين المسموح لهم باستخدام البوت
 const allowedUsers = [
   "@Ibrahim_Asiri", // أبو ملاك
   "@a_aseeri"        // أخو أبو ملاك
 ];
 
-// التحقق من صلاحية المستخدم
 function isAuthorized(user) {
   return allowedUsers.includes(user);
 }
 
-// إرسال الرد عبر تيليجرام
-async function sendTelegramReply(chatId, text) {
-  const token = process.env.TELEGRAM_TOKEN;
-  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+const arabicToEnglishSymbols = {
+  "الراجحي": "1120.SR",
+  "أرامكو": "2222.SR",
+  "اس تي سي": "7010.SR",
+  "سابك": "2010.SR",
+  "أكوا باور": "2082.SR",
+  "المراعي": "2280.SR",
+  "دار الأركان": "4300.SR",
+  "أهلي": "1180.SR",
+  "الإنماء": "1150.SR",
+  "جبل عمر": "4250.SR",
+  "سيرا": "1810.SR",
+  "بان": "9587.SR"
+};
 
-  try {
-    await axios.post(url, {
-      chat_id: chatId,
-      text: text
-    });
-  } catch (error) {
-    console.error("فشل الإرسال لتليجرام:", error.response?.data || error.message);
-  }
-}
-
-// توليد نص التحليل الفني
 function generateStockAnalysis({ symbol, price, trend, entry, tradeType, targets, support, stop }) {
   return `📌 تحليل سهم: ${symbol}
 ▪️ السعر الحالي: ${price}
 ▪️ الاتجاه الفني: ${trend}
-▪️ نقطة الدخول المثالية: ${entry}
+▪️ نقطة الدخول المتوقعة: ${entry}
 ▪️ نوع الصفقة: ${tradeType}
-▪️ الأهداف:
-   • الهدف الأول: ${targets[0]}
-   • الهدف الثاني: ${targets[1]}
-   • الهدف الثالث: ${targets[2]}
-▪️ مناطق الدعم: ${support.join(" - ")}
-▪️ وقف الخسارة: ${stop}
+🎯 الأهداف: ${targets.join(' - ')}
+🛡️ مناطق الدعم: ${support}
+⛔ وقف الخسارة: ${stop}
 🤖 بواسطة نظام أبو ملاك الذكي.`;
 }
 
-// المعالجة الرئيسية للرسائل الواردة
-app.post('/', async (req, res) => {
-  const message = req.body.message;
-  if (!message || !message.from || !message.text) return res.sendStatus(400);
-
-  const username = "@" + message.from.username;
-  const chatId = message.chat.id;
-  const text = message.text.trim();
-
-  if (!isAuthorized(username)) {
-    await sendTelegramReply(chatId, `🚫 عذرًا ${username}، ليس لديك صلاحية لاستخدام هذا البوت.`);
-    return res.sendStatus(403);
-  }
-
-  // استخراج رمز السهم من الرسالة
-  const match = text.match(/(?:تحليل|حلل)\s*سهم\s*([\w\d]+)/i);
-  if (!match) {
-    await sendTelegramReply(chatId, `❗️يرجى كتابة: تحليل سهم [الرمز] أو حلل سهم [الرمز]`);
-    return res.sendStatus(200);
-  }
-
-  const symbol = match[1].toUpperCase();
-  const yahooSymbol = symbol.match(/^\d{4}$/) ? `${symbol}.SR` : symbol;
-
-  try {
-    const result = await yahooFinance.quote(yahooSymbol);
-    const price = result.regularMarketPrice;
-
-    const response = generateStockAnalysis({
-      symbol,
-      price: price.toFixed(2),
-      trend: "صاعد 🔼", // مؤقتًا
-      entry: (price * 0.98).toFixed(2),
-      tradeType: "مضاربة فنية",
-      targets: [
-        (price * 1.03).toFixed(2),
-        (price * 1.05).toFixed(2),
-        (price * 1.08).toFixed(2)
-      ],
-      support: [
-        (price * 0.95).toFixed(2),
-        (price * 0.92).toFixed(2)
-      ],
-      stop: (price * 0.90).toFixed(2)
-    });
-
-    await sendTelegramReply(chatId, response);
-  } catch (err) {
-    await sendTelegramReply(chatId, `⚠️ تعذر جلب بيانات السهم لتحليل سهم ${symbol}، تأكد من الرمز.`);
-  }
-
-  res.sendStatus(200);
-});
-
-app.listen(port, () => {
-  console.log(`Bot is running on port ${port}`);
-});
-
-const bodyParser = require('body-parser');
-const yfinance = require('yahoo-finance2').default;
-
-const app = express();
-const port = process.env.PORT || 10000;
-
-app.use(bodyParser.json());
-
-const allowedUsers = [
-  "@Ibrahim_Asiri", // أبو ملاك
-  "@a_aseeri"        // أخو أبو ملاك
-];
-
-// إرسال الرد لتليجرام
 async function sendTelegramReply(chatId, text) {
   const token = process.env.TELEGRAM_TOKEN;
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
   try {
     await axios.post(url, { chat_id: chatId, text });
   } catch (error) {
-    console.error("فشل إرسال الرد:", error.response?.data || error.message);
+    console.error("فشل إرسال الرد", error.response?.data || error.message);
   }
 }
 
-// تحليل سهم بناءً على الرمز
-async function analyzeStock(symbol) {
-  try {
-    const quote = await yfinance.quote(symbol);
-    const price = quote.regularMarketPrice;
-    const trend = quote.marketState === "REGULAR" ? "نشط" : "غير نشط";
-
-    const entry = (price * 0.98).toFixed(2); // دخول تقريبي
-    const targets = [
-      (price * 1.02).toFixed(2),
-      (price * 1.05).toFixed(2),
-      (price * 1.08).toFixed(2)
-    ];
-    const stop = (price * 0.95).toFixed(2);
-
-    return `📌 تحليل سهم: ${symbol.toUpperCase()}
-▪️ السعر الحالي: ${price}
-▪️ الاتجاه الفني: ${trend}
-▪️ نقطة الدخول المثالية: ${entry}
-▪️ نوع الصفقة: مضاربة فنية
-▪️ الأهداف:
-   • الهدف الأول: ${targets[0]}
-   • الهدف الثاني: ${targets[1]}
-   • الهدف الثالث: ${targets[2]}
-▪️ مناطق الدعم: تحت المراقبة الفنية
-▪️ وقف الخسارة: ${stop}
-🤖 بواسطة نظام أبو ملاك الذكي`;
-  } catch (err) {
-    return `⚠️ تعذر جلب بيانات السهم ${symbol.toUpperCase()}، تأكد من الرمز`;
-  }
+function extractSymbolFromText(text) {
+  const match = text.match(/(?:تحليل|حلل)\s+سهم\s+(.+)/i);
+  if (!match) return null;
+  const raw = match[1].trim();
+  return arabicToEnglishSymbols[raw] || raw.toUpperCase();
 }
 
-// عند وصول رسالة لتليجرام
 app.post('/', async (req, res) => {
   const message = req.body.message;
-  if (!message || !message.from || !message.text) return res.sendStatus(400);
+  if (!message) return res.sendStatus(200);
 
-  const username = "@" + message.from.username;
   const chatId = message.chat.id;
-  const symbol = message.text.trim().toUpperCase();
+  const username = `@${message.from.username}`;
+  const text = message.text;
 
-  if (!allowedUsers.includes(username)) {
-    await sendTelegramReply(chatId, `🚫 عذرًا ${username}، ليس لديك صلاحية لاستخدام هذا البوت.`);
-    return res.sendStatus(403);
+  if (!isAuthorized(username)) {
+    return sendTelegramReply(chatId, `🚫 عذرًا ${username}، ليس لديك صلاحية لاستخدام هذا البوت.`);
   }
 
-  const analysis = await analyzeStock(symbol);
-  await sendTelegramReply(chatId, analysis);
+  const symbol = extractSymbolFromText(text);
+  if (!symbol) {
+    return sendTelegramReply(chatId, `⚠️ لم أتمكن من فهم الرمز المطلوب. الرجاء كتابة مثل: تحليل سهم AAPL أو تحليل سهم الراجحي`);
+  }
+
+  try {
+    const quote = await yahooFinance.quote(symbol);
+    const price = quote.regularMarketPrice;
+    const trend = price > quote.fiftyDayAverage ? "صاعد" : "هابط";
+
+    const entry = (price * 0.99).toFixed(2);
+    const stop = (price * 0.95).toFixed(2);
+    const targets = [
+      (price * 1.02).toFixed(2),
+      (price * 1.04).toFixed(2),
+      (price * 1.06).toFixed(2)
+    ];
+
+    const messageText = generateStockAnalysis({
+      symbol,
+      price,
+      trend,
+      entry,
+      tradeType: trend === "صاعد" ? "شراء" : "بيع",
+      targets,
+      support: (price * 0.97).toFixed(2),
+      stop
+    });
+
+    await sendTelegramReply(chatId, messageText);
+  } catch (err) {
+    console.error(err);
+    await sendTelegramReply(chatId, `⚠️ تعذر جلب بيانات السهم تحليل سهم ${symbol}، تأكد من الرمز`);
+  }
+
   res.sendStatus(200);
 });
 
 app.listen(port, () => {
-  console.log(`Bot is running on port ${port}`);
+  console.log(`🤖 Bot server running on port ${port}`);
 });
