@@ -5,19 +5,19 @@ const bodyParser = require('body-parser');
 const app = express();
 app.use(bodyParser.json());
 
-// قاموس تحويل أسماء الشركات إلى رموزها
-const symbolMap = {
-  'الراجحي': '1120',
-  'الدواء': '4163',
-  'مجموعة تداول': '1111',
-  'أرامكو': '2222',
-  'أكوا باور': '2082'
-  // أضف المزيد حسب الحاجة
-};
-
 // دالة استخراج الرمز من النص
 function extractSymbolFromText(text) {
   if (!text) return null;
+
+  const stockMap = {
+    "الراجحي": "1120",
+    "الدواء": "4163",
+    "مجموعة تداول": "1111",
+    "أرامكو": "2222",
+    "سابك": "2010",
+    "المواساة": "4002",
+    "كهرباء": "5110"
+  };
 
   const normalized = text
     .normalize('NFKD')
@@ -26,11 +26,13 @@ function extractSymbolFromText(text) {
     .trim()
     .toLowerCase();
 
-  let cleaned = normalized
-    .replace(/سهم|شركة|ارجو|لو سمحت|تحليل|الرمز|من فضلك|الله يرضى عليك|عطني|ابغى|أريد|لو تكرمت|كم هدفه|هات لي|كم السعر|كم وقف الخسارة|ابي تحليل|وش رايك في|توقعك|ايش رايك/g, '')
-    .trim();
+  for (const name in stockMap) {
+    if (normalized.includes(name.toLowerCase())) {
+      return stockMap[name];
+    }
+  }
 
-  const match = cleaned.match(/\b([a-zA-Z]{1,5}|\d{3,5})\b/);
+  const match = normalized.match(/\b([a-zA-Z]{1,5}|\d{3,5})\b/);
   return match ? match[1].toUpperCase() : null;
 }
 
@@ -60,25 +62,14 @@ app.post('/', async (req, res) => {
   const chatId = message.chat.id;
   const text = message.text;
 
-  let symbol = extractSymbolFromText(text);
-
-  // إذا ما تم التعرف على الرمز نحاول من القاموس
-  if (!symbol) {
-    const normalizedText = text.trim().toLowerCase();
-    for (const [key, value] of Object.entries(symbolMap)) {
-      if (normalizedText.includes(key)) {
-        symbol = value;
-        break;
-      }
-    }
-  }
+  const symbol = extractSymbolFromText(text);
 
   if (!symbol) {
     await sendMessage(chatId, `⚠️ لم أتمكن من فهم الرمز المطلوب. الرجاء كتابة مثل: تحليل سهم AAPL أو تحليل سهم الراجحي`);
     return res.sendStatus(200);
   }
 
-  const reply = `📌 تحليل سهم: ${symbol}\n▪️ الاتجاه الفني: قد يتغير\n▪️ مناطق الدعم: يتم التحديث\n▪️ مناطق المقاومة: يتم التحديث\n🤖 بواسطة نظام أبو ملاك الذكي.`;
+  const reply = `📌 تحليل سهم: ${symbol}\n🤖 بواسطة نظام أبو ملاك الذكي.`;
 
   await sendMessage(chatId, reply);
   res.sendStatus(200);
