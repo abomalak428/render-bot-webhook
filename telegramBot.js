@@ -5,24 +5,31 @@ const bodyParser = require('body-parser');
 const app = express();
 app.use(bodyParser.json());
 
+// قاموس تحويل أسماء الشركات إلى رموزها
+const symbolMap = {
+  'الراجحي': '1120',
+  'الدواء': '4163',
+  'مجموعة تداول': '1111',
+  'أرامكو': '2222',
+  'أكوا باور': '2082'
+  // أضف المزيد حسب الحاجة
+};
+
 // دالة استخراج الرمز من النص
 function extractSymbolFromText(text) {
   if (!text) return null;
 
-  // تحويل النص إلى حروف صغيرة وتشكيل الشكل وحذف العلامات الزائدة
   const normalized = text
     .normalize('NFKD')
-    .replace(/[^\u0621-\u064Aa-zA-Z0-9\s]/g, '') // حذف الرموز الخاصة
-    .replace(/\s{2,}/g, ' ') // دمج المسافات المكررة
+    .replace(/[^ء-يa-zA-Z0-9\s]/g, '')
+    .replace(/\s{2,}/g, ' ')
     .trim()
     .toLowerCase();
 
-  // حذف كلمات زائدة
   let cleaned = normalized
     .replace(/سهم|شركة|ارجو|لو سمحت|تحليل|الرمز|من فضلك|الله يرضى عليك|عطني|ابغى|أريد|لو تكرمت|كم هدفه|هات لي|كم السعر|كم وقف الخسارة|ابي تحليل|وش رايك في|توقعك|ايش رايك/g, '')
     .trim();
 
-  // استخراج الرمز
   const match = cleaned.match(/\b([a-zA-Z]{1,5}|\d{3,5})\b/);
   return match ? match[1].toUpperCase() : null;
 }
@@ -53,7 +60,18 @@ app.post('/', async (req, res) => {
   const chatId = message.chat.id;
   const text = message.text;
 
-  const symbol = extractSymbolFromText(text);
+  let symbol = extractSymbolFromText(text);
+
+  // إذا ما تم التعرف على الرمز نحاول من القاموس
+  if (!symbol) {
+    const normalizedText = text.trim().toLowerCase();
+    for (const [key, value] of Object.entries(symbolMap)) {
+      if (normalizedText.includes(key)) {
+        symbol = value;
+        break;
+      }
+    }
+  }
 
   if (!symbol) {
     await sendMessage(chatId, `⚠️ لم أتمكن من فهم الرمز المطلوب. الرجاء كتابة مثل: تحليل سهم AAPL أو تحليل سهم الراجحي`);
