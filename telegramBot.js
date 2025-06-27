@@ -1,4 +1,3 @@
-// Telegram Bot Access Control + Yahoo Finance Integration + Arabic Company Name Recognition
 const axios = require('axios');
 const express = require('express');
 const bodyParser = require('body-parser');
