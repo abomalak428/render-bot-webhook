@@ -56,30 +56,30 @@ async function sendTelegramReply(chatId, text) {
 function extractSymbolFromText(text) {
   const lowered = text.toLowerCase().trim();
 
-  // إزالة كلمات مثل "تحليل سهم" وغيره
+  // إزالة كلمات زائدة ورموز خاصة
   let cleaned = lowered
     .replace(/تحليل سهم|حلل سهم|سهم|شركة/g, '')
+    .replace(/[^\u0621-\u064Aa-z0-9. ]/gi, '') // يحذف الرموز الخاصة
     .trim();
 
-  // لو كان من الرموز المعروفة بالعربي
+  // تطابق مباشر
   if (arabicToEnglishSymbols[cleaned]) {
     return arabicToEnglishSymbols[cleaned];
   }
 
-  // تطابق جزئي مع الأسماء العربية
+  // تطابق جزئي
   for (const [arabicName, symbol] of Object.entries(arabicToEnglishSymbols)) {
     if (arabicName.includes(cleaned) || cleaned.includes(arabicName)) {
       return symbol;
     }
   }
 
-  // التطابق بالرموز الإنجليزية أو أرقام فقط مثل 2380
+  // تطابق مع رموز إنجليزية أو أرقام
   const alphanumRegex = /^[a-z0-9.]{2,10}$/i;
   if (alphanumRegex.test(cleaned)) {
     return cleaned.toUpperCase();
   }
 
-  // لو ما تعرف على شيء
   return null;
 }
 
