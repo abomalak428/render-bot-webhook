@@ -2,11 +2,12 @@
 const axios = require('axios');
 const express = require('express');
 const bodyParser = require('body-parser');
+require('dotenv').config(); // لتحميل المتغيرات من .env
 
 const app = express();
 app.use(bodyParser.json());
 
-const TELEGRAM_TOKEN = '1321145851:AAGSkHWX2XdPcKXQiKiuTlqu38ybIDMwTuc';
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
 
 const arabicToEnglishSymbols = {
@@ -43,7 +44,7 @@ const arabicToEnglishSymbols = {
   "المجموعة السعودية": "2250.SR",
   "ينساب": "2290.SR",
   "صناعة الورق": "2300.SR",
-  // ... البقية مستمرة إلى آخر سهم (217 سهم)
+  // ... أكمل البقية حسب قائمتك
   "الماجد للعود": "4165.SR"
 };
 
