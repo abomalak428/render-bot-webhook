@@ -2,7 +2,7 @@
 const axios = require('axios');
 const express = require('express');
 const bodyParser = require('body-parser');
-require('dotenv').config(); // لتحميل المتغيرات من .env
+require('dotenv').config();
 
 const app = express();
 app.use(bodyParser.json());
@@ -15,28 +15,32 @@ const arabicToEnglishSymbols = {
   "فيبكو": "2180.SR",
   "الماجد للعود": "4165.SR",
   "أسلاك": "1301.SR",
-  "أماك": "1322.SR",
-  "ينساب": "2290.SR",
-  "المصافي": "2030.SR",
-  "سابك": "2010.SR",
-  "نماء للكيماويات": "2210.SR",
-  "زجاج": "2150.SR"
-  // أضف ما تشاء هنا
+  "أماك": "1322.SR"
 };
 
-// ✅ تحديث الدالة لتدعم الاسم أو الرقم
+// ✅ بيانات مؤقتة
+const stockData = {
+  "2222.SR": {
+    price: 29.80,
+    trend: "صاعد",
+    entry: 29.20,
+    stopLoss: 28.60,
+    targets: ["30.50", "31.20", "32.00"],
+    support: ["29.00", "28.50"],
+    resistance: ["30.00", "30.80"]
+  }
+};
+
 function extractSymbol(text) {
   if (!text) return null;
   const cleaned = text.replace(/[\n\r]/g, '').trim();
 
-  // تطابق بالاسم
   for (const [arabic, symbol] of Object.entries(arabicToEnglishSymbols)) {
     if (cleaned.includes(arabic)) {
       return { name: arabic, symbol };
     }
   }
 
-  // تطابق برمز رقمي مثل 2222
   const numericMatch = cleaned.match(/\b(\d{4})\b/);
   if (numericMatch) {
     const code = numericMatch[1];
@@ -74,15 +78,21 @@ app.post('/', async (req, res) => {
   }
 
   const { name, symbol } = match;
+  const data = stockData[symbol];
+
+  if (!data) {
+    await sendMessage(chatId, `📌 تحليل سهم: ${name}\n⚠️ لا توجد بيانات مفصلة لهذا السهم حاليًا.`);
+    return res.sendStatus(200);
+  }
 
   const reply = `📌 تحليل سهم: ${name}
-▪️ الرمز: ${symbol}
-▪️ الاتجاه الفني: سيتم تحديده لاحقًا
-▪️ نوع الصفقة: شراء / بيع
-▪️ نقطة الدخول المتوقعة: تحت الدراسة
-🎯 الأهداف: ثلاث مستويات
-🛡️ مناطق الدعم: قيد التحديث
-⛔ وقف الخسارة: سيتم تحديده
+▪️ السعر الحالي: ${data.price}
+▪️ الاتجاه الفني: ${data.trend}
+▪️ مناطق الدعم: ${data.support.join(" - ")}
+▪️ مناطق المقاومة: ${data.resistance.join(" - ")}
+🎯 نقطة الدخول المثالية: ${data.entry}
+⛔ وقف الخسارة: ${data.stopLoss}
+🎯 الأهداف: ${data.targets.join(" - ")}
 🤖 بواسطة نظام أبو ملاك الذكي.`;
 
   await sendMessage(chatId, reply);
